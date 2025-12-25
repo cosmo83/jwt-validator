@@ -143,13 +143,20 @@ def validate():
     user_name = decoded.get('user_name', decoded.get('sub', 'unknown'))
     tenant_id = decoded.get('zid', 'unknown')
 
-    # Return success with user info in headers
-    return jsonify({
+    # Return success with user info in headers (for Trino integration)
+    response = jsonify({
         "valid": True,
         "user": user_name,
         "tenant": tenant_id,
         "claims": decoded
-    }), 200
+    })
+
+    # Add headers that will be forwarded to Trino by ext_authz
+    response.headers['X-Trino-User'] = user_name
+    response.headers['X-Forwarded-User'] = user_name
+    response.headers['X-Tenant-Id'] = tenant_id
+
+    return response, 200
 
 
 @app.route('/health', methods=['GET'])
