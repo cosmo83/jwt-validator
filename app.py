@@ -118,17 +118,19 @@ def validate_jwt_token(token: str) -> Tuple[bool, Optional[dict], str]:
         return False, None, f"Validation error: {str(e)}"
 
 
-@app.route('/validate', methods=['GET', 'POST'])
-def validate():
+@app.route('/', defaults={'path': ''}, methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'])
+@app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'])
+def validate(path):
     """
     Validate JWT from Authorization header.
     Returns user info if valid, error otherwise.
 
     Allows internal Trino traffic (worker-coordinator communication) to bypass validation.
     """
-    # Get the original request path from Envoy headers
-    original_path = request.headers.get('X-Envoy-Original-Path',
-                                       request.headers.get(':path', ''))
+    # Get the request path - Envoy ext_authz calls with the original path
+    request_path = '/' + path if path else '/'
+
+    app.logger.debug(f"Validating request for path: {request_path}")
 
     # Allow internal Trino paths to bypass JWT validation
     # These are used for worker-coordinator communication
@@ -137,8 +139,8 @@ def validate():
 
     # Check if this is internal Trino traffic (no Authorization header + internal path)
     auth_header = request.headers.get('Authorization', '')
-    if not auth_header and any(original_path.startswith(path) for path in internal_paths):
-        app.logger.debug(f"Allowing internal Trino traffic: {original_path}")
+    if not auth_header and any(request_path.startswith(internal_path) for internal_path in internal_paths):
+        app.logger.info(f"Allowing internal Trino traffic: {request_path}")
         # Return success without JWT validation for internal traffic
         return jsonify({"valid": True, "internal": True}), 200
 
