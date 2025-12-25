@@ -165,4 +165,8 @@ def ready():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    # This is only used for local development
+    # In production, gunicorn is used instead
+    import os
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port)
