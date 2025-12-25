@@ -133,9 +133,13 @@ def validate(path):
     app.logger.debug(f"Validating request for path: {request_path}")
 
     # Allow internal Trino paths to bypass JWT validation
-    # These are used for worker-coordinator communication
-    internal_paths = ['/v1/announcement/', '/v1/service/', '/v1/node/', '/v1/task/',
-                     '/v1/statement/', '/v1/query/', '/ready', '/health']
+    # These are used for worker-coordinator and coordinator-worker communication
+    internal_paths = [
+        '/v1/announcement/', '/v1/service/', '/v1/node/', '/v1/task/',
+        '/v1/statement/', '/v1/query/', '/v1/memory', '/v1/memory/',
+        '/v1/info', '/v1/info/', '/v1/status', '/v1/status/',
+        '/v1/thread', '/v1/thread/', '/ready', '/health'
+    ]
 
     # Check if this is internal Trino traffic (no Authorization header + internal path)
     auth_header = request.headers.get('Authorization', '')
